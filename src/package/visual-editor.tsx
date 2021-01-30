@@ -36,55 +36,91 @@ export const VisualEditor = defineComponent({
       height: `${dataModel.value.container.height}px`,
     }))
 
-    const menuDraggier = {
-      current: {
-        component: null as null | VisualEditorComponent,
-      },
-      dragStart: (e: DragEvent, component: VisualEditorComponent) => {
-        containerRef.value.addEventListener('dragenter', menuDraggier.dragEnter)
-        containerRef.value.addEventListener('dragover', menuDraggier.dragOver)
-        containerRef.value.addEventListener('dragleave', menuDraggier.dragLeave)
-        containerRef.value.addEventListener('drop', menuDraggier.drop)
-        menuDraggier.current.component = component
-      },
-      dragEnter: (e: DragEvent) => {
-        e.dataTransfer!.dropEffect = 'move'
-      },
-      drag: (e: DragEvent) => {
-        e.preventDefault()
-      },
-      dragOver: (e: DragEvent) => {
-        e.preventDefault()
-      },
-      dragLeave: (e: DragEvent) => {
-        e.dataTransfer!.dropEffect = 'none'
-      },
-      dragEnd: (e: DragEvent) => {
-        containerRef.value.removeEventListener(
-          'dragenter',
-          menuDraggier.dragEnter
-        )
-        containerRef.value.removeEventListener(
-          'dragover',
-          menuDraggier.dragOver
-        )
-        containerRef.value.removeEventListener(
-          'dragleave',
-          menuDraggier.dragLeave
-        )
-        containerRef.value.removeEventListener('drop', menuDraggier.drop)
-        menuDraggier.current.component = null
-      },
-      drop: (e: DragEvent) => {
-        console.log('drop', menuDraggier.current.component)
-        const blocks = dataModel.value.blocks || []
-        blocks.push({
-          top: e.offsetY,
-          left: e.offsetX,
-        })
-        dataModel.value = { ...dataModel.value, blocks }
-      },
-    }
+    const menuDraggier = (() => {
+      let component = null as null | VisualEditorComponent
+
+      const blockHandler = {
+        /**
+         * 处理拖拽菜单开始动作
+         * @param e
+         * @param current
+         */
+        dragStart: (e: DragEvent, current: VisualEditorComponent) => {
+          containerRef.value.addEventListener(
+            'dragenter',
+            containerHandler.dragEnter
+          )
+          containerRef.value.addEventListener(
+            'dragover',
+            containerHandler.dragOver
+          )
+          containerRef.value.addEventListener(
+            'dragleave',
+            containerHandler.dragLeave
+          )
+          containerRef.value.addEventListener('drop', containerHandler.drop)
+          component = current
+        },
+        /**
+         * 处理菜单拖拽结束动作
+         * @param e
+         */
+        dragEnd: (e: DragEvent) => {
+          containerRef.value.removeEventListener(
+            'dragenter',
+            containerHandler.dragEnter
+          )
+          containerRef.value.removeEventListener(
+            'dragover',
+            containerHandler.dragOver
+          )
+          containerRef.value.removeEventListener(
+            'dragleave',
+            containerHandler.dragLeave
+          )
+          containerRef.value.removeEventListener('drop', containerHandler.drop)
+          component = null
+        },
+      }
+
+      const containerHandler = {
+        /**
+         * 拖拽菜单组件，进入容器的时候，设置鼠标为可放置状态
+         * @param e
+         */
+        dragEnter: (e: DragEvent) => {
+          e.dataTransfer!.dropEffect = 'move'
+        },
+        /**
+         * 拖拽菜单组件，鼠标在容器中移动的时候，禁用默认事件
+         * @param e
+         */
+        dragOver: (e: DragEvent) => {
+          e.preventDefault()
+        },
+        /**
+         * 如果拖拽过程中，鼠标离开了容器，设置鼠标为不可放置的状态
+         * @param e
+         */
+        dragLeave: (e: DragEvent) => {
+          e.dataTransfer!.dropEffect = 'none'
+        },
+        /**
+         * 在子容器中放置的时候，设置事件对象的offsetX和offsetY添加一条组件数据
+         * @param e
+         */
+        drop: (e: DragEvent) => {
+          console.log('drop', component)
+          const blocks = dataModel.value.blocks || []
+          blocks.push({
+            top: e.offsetY,
+            left: e.offsetX,
+          })
+          dataModel.value = { ...dataModel.value, blocks }
+        },
+      }
+      return blockHandler
+    })()
 
     return () => (
       <div class="visual-editor">
