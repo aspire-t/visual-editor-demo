@@ -116,6 +116,7 @@ export const VisualEditor = defineComponent({
             top: e.offsetY,
             left: e.offsetX,
             componentKey: component!.key,
+            adjustPosition: true,
           })
           dataModel.value = { ...dataModel.value, blocks }
         },
